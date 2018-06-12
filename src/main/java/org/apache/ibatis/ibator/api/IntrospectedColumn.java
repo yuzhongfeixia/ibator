@@ -15,237 +15,295 @@
  */
 package org.apache.ibatis.ibator.api;
 
-import java.sql.Types;
-
 import org.apache.ibatis.ibator.api.dom.java.FullyQualifiedJavaType;
 import org.apache.ibatis.ibator.config.IbatorContext;
 import org.apache.ibatis.ibator.internal.types.JdbcTypeNameTranslator;
 import org.apache.ibatis.ibator.internal.util.StringUtility;
 
-/**
- * This class holds information about an introspected column.  The
- * class has utility methods useful for generating iBATIS objects.
- * 
- * @author Jeff Butler
- */
-public class IntrospectedColumn {
-    protected String actualColumnName;
+public class IntrospectedColumn
+{
+  protected String actualColumnName;
+  protected int jdbcType;
+  protected String jdbcTypeName;
+  protected boolean nullable;
+  protected int length;
+  protected int scale;
+  protected boolean identity;
+  private String _javaProperty;
+  protected String javaProperty;
+  protected String isSetJavaProperty;
+  protected String isPlusJavaProperty;
+  protected String sqlSnippetJavaProperty;
+  private boolean isNumberIncremental;
+  private boolean isPrimaryKey;
+  protected FullyQualifiedJavaType fullyQualifiedJavaType;
+  protected String tableAlias;
+  protected String typeHandler;
+  protected IbatorContext ibatorContext;
+  protected boolean isColumnNameDelimited;
+  protected IntrospectedTable introspectedTable;
+  
+  public int getJdbcType()
+  {
+    return this.jdbcType;
+  }
+  
+  public void setJdbcType(int jdbcType)
+  {
+    this.jdbcType = jdbcType;
+  }
+  
+  public int getLength()
+  {
+    return this.length;
+  }
+  
+  public void setLength(int length)
+  {
+    this.length = length;
+  }
+  
+  public boolean isNullable()
+  {
+    return this.nullable;
+  }
+  
+  public void setNullable(boolean nullable)
+  {
+    this.nullable = nullable;
+  }
+  
+  public int getScale()
+  {
+    return this.scale;
+  }
+  
+  public void setScale(int scale)
+  {
+    this.scale = scale;
+  }
+  
+  public String toString()
+  {
+    StringBuilder sb = new StringBuilder();
     
-    protected int jdbcType;
+    sb.append("Actual Column Name: ");
+    sb.append(this.actualColumnName);
+    sb.append(", JDBC Type: ");
+    sb.append(this.jdbcType);
+    sb.append(", Nullable: ");
+    sb.append(this.nullable);
+    sb.append(", Length: ");
+    sb.append(this.length);
+    sb.append(", Scale: ");
+    sb.append(this.scale);
+    sb.append(", Identity: ");
+    sb.append(this.identity);
     
-    protected String jdbcTypeName;
-
-    protected boolean nullable;
-
-    protected int length;
-
-    protected int scale;
-
-    protected boolean identity;
-
-    protected String javaProperty;
+    return sb.toString();
+  }
+  
+  public void setActualColumnName(String actualColumnName)
+  {
+    this.actualColumnName = actualColumnName;
+    this.isColumnNameDelimited = StringUtility.stringContainsSpace(actualColumnName);
+  }
+  
+  public boolean isIdentity()
+  {
+    return this.identity;
+  }
+  
+  public void setIdentity(boolean identity)
+  {
+    this.identity = identity;
+  }
+  
+  public boolean isNumberIncremental()
+  {
+    return this.isNumberIncremental;
+  }
+  
+  public void setNumberIncremental(boolean isNumberIncremental)
+  {
+    this.isNumberIncremental = isNumberIncremental;
+  }
+  
+  public boolean isPrimaryKey()
+  {
+    return this.isPrimaryKey;
+  }
+  
+  public void setPrimaryKey(boolean isPrimaryKey)
+  {
+    this.isPrimaryKey = isPrimaryKey;
+  }
+  
+  public boolean isBLOBColumn()
+  {
+    String typeName = getJdbcTypeName();
+    return ("BINARY".equals(typeName)) || ("BLOB".equals(typeName)) || 
+      ("CLOB".equals(typeName)) || ("LONGVARBINARY".equals(typeName)) || 
+      ("LONGVARCHAR".equals(typeName)) || ("VARBINARY".equals(typeName));
+  }
+  
+  public boolean isStringColumn()
+  {
+    return this.fullyQualifiedJavaType.equals(
+      FullyQualifiedJavaType.getStringInstance());
+  }
+  
+  public boolean isNumberColumn()
+  {
+    return (this.fullyQualifiedJavaType.equals(FullyQualifiedJavaType.getBaseByteInstance())) || 
+      (this.fullyQualifiedJavaType.equals(FullyQualifiedJavaType.getFullByteInstance())) || 
+      (this.fullyQualifiedJavaType.equals(FullyQualifiedJavaType.getBaseShortInstance())) || 
+      (this.fullyQualifiedJavaType.equals(FullyQualifiedJavaType.getFullShortInstance())) || 
+      (this.fullyQualifiedJavaType.equals(FullyQualifiedJavaType.getIntInstance())) || 
+      (this.fullyQualifiedJavaType.equals(FullyQualifiedJavaType.getFullIntegerInstance())) || 
+      (this.fullyQualifiedJavaType.equals(FullyQualifiedJavaType.getBaseLongInstance())) || 
+      (this.fullyQualifiedJavaType.equals(FullyQualifiedJavaType.getFullLongInstance())) || 
+      (this.fullyQualifiedJavaType.equals(FullyQualifiedJavaType.getBaseFloatInstance())) || 
+      (this.fullyQualifiedJavaType.equals(FullyQualifiedJavaType.getFullFloatInstance())) || 
+      (this.fullyQualifiedJavaType.equals(FullyQualifiedJavaType.getBaseDoubleInstance())) || 
+      (this.fullyQualifiedJavaType.equals(FullyQualifiedJavaType.getFullDoubleInstance()));
+  }
+  
+  public boolean isJdbcCharacterColumn()
+  {
+    return (this.jdbcType == 1) || 
+      (this.jdbcType == 2005) || 
+      (this.jdbcType == -1) || 
+      (this.jdbcType == 12);
+  }
+  
+  public String getJavaProperty(boolean firstCharUpper)
+  {
+    if (firstCharUpper) {
+      return this._javaProperty;
+    }
+    return getJavaProperty();
+  }
+  
+  public String getJavaProperty()
+  {
+    return getJavaProperty(null);
+  }
+  
+  public String getJavaProperty(String prefix)
+  {
+    if (prefix == null) {
+      return this.javaProperty;
+    }
+    StringBuilder sb = new StringBuilder();
+    sb.append(prefix);
+    sb.append(this.javaProperty);
     
-    protected FullyQualifiedJavaType fullyQualifiedJavaType;
+    return sb.toString();
+  }
+  
+  public String getIsSetJavaProperty()
+  {
+    return getIsSetJavaProperty(null);
+  }
+  
+  public String getIsSetJavaProperty(String prefix)
+  {
+    if (prefix == null) {
+      return this.isSetJavaProperty;
+    }
+    StringBuilder sb = new StringBuilder();
+    sb.append(prefix);
+    sb.append(this.isSetJavaProperty);
+    return sb.toString();
+  }
+  
+  public String getIsPlusJavaProperty()
+  {
+    return getIsPlusJavaProperty(null);
+  }
+  
+  public String getIsPlusJavaProperty(String prefix)
+  {
+    if (prefix == null) {
+      return this.isPlusJavaProperty;
+    }
+    StringBuilder sb = new StringBuilder();
+    sb.append(prefix);
+    sb.append(this.isPlusJavaProperty);
+    return sb.toString();
+  }
+  
+  public void setJavaProperty(String javaProperty)
+  {
+    this.javaProperty = javaProperty;
+    StringBuilder sb = new StringBuilder(javaProperty);
+    sb.setCharAt(0, Character.toUpperCase(javaProperty.charAt(0)));
+    this._javaProperty = sb.toString();
     
-    protected String tableAlias;
-    
-    protected String typeHandler;
-    
-    protected IbatorContext ibatorContext;
-    
-    protected boolean isColumnNameDelimited;
-    
-    protected IntrospectedTable introspectedTable;
 
-    /**
-     * Constructs a Column definition.  This object holds all the 
-     * information about a column that is required to generate
-     * Java objects and SQL maps;
-     */
-    public IntrospectedColumn() {
-        super();
-    }
 
-    public int getJdbcType() {
-        return jdbcType;
+    this.isSetJavaProperty = (this.javaProperty + "$seted");
+    this.sqlSnippetJavaProperty = (this.javaProperty + "$sqlSnippeted");
+    this.isPlusJavaProperty = (this.javaProperty + "$plused");
+  }
+  
+  public String getRenamedColumnNameForResultMap()
+  {
+    if (StringUtility.stringHasValue(this.tableAlias))
+    {
+      StringBuilder sb = new StringBuilder();
+      
+      sb.append(this.tableAlias);
+      sb.append('_');
+      sb.append(this.actualColumnName);
+      return sb.toString();
     }
-
-    public void setJdbcType(int jdbcType) {
-        this.jdbcType = jdbcType;
+    return this.actualColumnName;
+  }
+  
+  public String getSelectListPhrase()
+  {
+    if (StringUtility.stringHasValue(this.tableAlias))
+    {
+      StringBuilder sb = new StringBuilder();
+      
+      sb.append(getAliasedEscapedColumnName());
+      sb.append(" as ");
+      if (this.isColumnNameDelimited) {
+        sb.append(this.ibatorContext.getBeginningDelimiter());
+      }
+      sb.append(this.tableAlias);
+      sb.append('_');
+      sb.append(StringUtility.escapeStringForIbatis(this.actualColumnName));
+      if (this.isColumnNameDelimited) {
+        sb.append(this.ibatorContext.getEndingDelimiter());
+      }
+      return sb.toString();
     }
-
-    public int getLength() {
-        return length;
-    }
-
-    public void setLength(int length) {
-        this.length = length;
-    }
-
-    public boolean isNullable() {
-        return nullable;
-    }
-
-    public void setNullable(boolean nullable) {
-        this.nullable = nullable;
-    }
-
-    public int getScale() {
-        return scale;
-    }
-
-    public void setScale(int scale) {
-        this.scale = scale;
-    }
-
-	/*
-	 * This method is primarily used for debugging, so we don't externalize the strings
-	 */
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-
-        sb.append("Actual Column Name: "); //$NON-NLS-1$
-        sb.append(actualColumnName);
-        sb.append(", JDBC Type: "); //$NON-NLS-1$
-        sb.append(jdbcType);
-        sb.append(", Nullable: "); //$NON-NLS-1$
-        sb.append(nullable);
-        sb.append(", Length: "); //$NON-NLS-1$
-        sb.append(length);
-        sb.append(", Scale: "); //$NON-NLS-1$
-        sb.append(scale);
-        sb.append(", Identity: "); //$NON-NLS-1$
-        sb.append(identity);
-
-        return sb.toString();
-    }
-
-    public void setActualColumnName(String actualColumnName) {
-        this.actualColumnName = actualColumnName;
-        isColumnNameDelimited = StringUtility.stringContainsSpace(actualColumnName);
-    }
-
-    /**
-     * @return Returns the identity.
-     */
-    public boolean isIdentity() {
-        return identity;
-    }
-
-    /**
-     * @param identity
-     *            The identity to set.
-     */
-    public void setIdentity(boolean identity) {
-        this.identity = identity;
-    }
-
-    public boolean isBLOBColumn() {
-        String typeName = getJdbcTypeName();
-
-        return "BINARY".equals(typeName) || "BLOB".equals(typeName) //$NON-NLS-1$ //$NON-NLS-2$
-            || "CLOB".equals(typeName) || "LONGVARBINARY".equals(typeName) //$NON-NLS-1$ //$NON-NLS-2$
-            || "LONGVARCHAR".equals(typeName) || "VARBINARY".equals(typeName); //$NON-NLS-1$ //$NON-NLS-2$
-    }
-
-    public boolean isStringColumn() {
-        return fullyQualifiedJavaType.equals( 
-            FullyQualifiedJavaType.getStringInstance());
-    }
-    
-    public boolean isJdbcCharacterColumn() {
-        return jdbcType == Types.CHAR
-            || jdbcType == Types.CLOB
-            || jdbcType == Types.LONGVARCHAR
-            || jdbcType == Types.VARCHAR;
-    }
-
-    public String getJavaProperty() {
-        return getJavaProperty(null);
-    }
-
-    public String getJavaProperty(String prefix) {
-        if (prefix == null) {
-            return javaProperty;
-        }
-        
-        StringBuilder sb = new StringBuilder();
-        sb.append(prefix);
-        sb.append(javaProperty);
-        
-        return sb.toString();
-    }
-
-    public void setJavaProperty(String javaProperty) {
-        this.javaProperty = javaProperty;
-    }
-
-    /**
-     * The renamed column name for a select statement.  If there
-     * is a table alias, the value will be alias_columnName.  This is
-     * appropriate for use in a result map.
-     * 
-     * @return the renamed column name
-     */
-    public String getRenamedColumnNameForResultMap() {
-        if (StringUtility.stringHasValue(tableAlias)) {
-            StringBuilder sb = new StringBuilder();
-            
-            sb.append(tableAlias);
-            sb.append('_');
-            sb.append(actualColumnName);
-            return sb.toString();
-        } else {
-            return actualColumnName;
-        }
-    }
-
-    /**
-     * The phrase to use in a select list.  If there
-     * is a table alias, the value will be 
-     * "alias.columnName as alias_columnName"
-     * 
-     * @return the proper phrase
-     */
-    public String getSelectListPhrase() {
-        if (StringUtility.stringHasValue(tableAlias)) {
-            StringBuilder sb = new StringBuilder();
-            
-            sb.append(getAliasedEscapedColumnName());
-            sb.append(" as "); //$NON-NLS-1$
-            if (isColumnNameDelimited) {
-                sb.append(ibatorContext.getBeginningDelimiter());
-            }
-            sb.append(tableAlias);
-            sb.append('_');
-            sb.append(StringUtility.escapeStringForIbatis(actualColumnName));
-            if (isColumnNameDelimited) {
-                sb.append(ibatorContext.getEndingDelimiter());
-            }
-            return sb.toString();
-        } else {
-            return getEscapedColumnName();
-        }
-    }
-    
-    public boolean isJDBCDateColumn() {
-        return fullyQualifiedJavaType.equals(FullyQualifiedJavaType.getDateInstance())
-            && "DATE".equalsIgnoreCase(jdbcTypeName); //$NON-NLS-1$
-    }
-    
-    public boolean isJDBCTimeColumn() {
-        return fullyQualifiedJavaType.equals(FullyQualifiedJavaType.getDateInstance())
-            && "TIME".equalsIgnoreCase(jdbcTypeName); //$NON-NLS-1$
-    }
-    
-    public String getIbatisFormattedParameterClause() {
-        return getIbatisFormattedParameterClause(null);
-    }
-    
-    /**
-     * 屏蔽生成update时增加的类型
-     * update T_B_OPERATOR_WAREHOUSE
+    return getEscapedColumnName();
+  }
+  
+  public boolean isJDBCDateColumn()
+  {
+    return (this.fullyQualifiedJavaType.equals(FullyQualifiedJavaType.getDateInstance())) && 
+      ("DATE".equalsIgnoreCase(this.jdbcTypeName));
+  }
+  
+  public boolean isJDBCTimeColumn()
+  {
+    return (this.fullyQualifiedJavaType.equals(FullyQualifiedJavaType.getDateInstance())) && 
+      ("TIME".equalsIgnoreCase(this.jdbcTypeName));
+  }
+  
+  public String getIbatisFormattedParameterClause()
+  {
+    return getIbatisFormattedParameterClause(null);
+  }
+  
+  /**
+   * 屏蔽生成update时增加的类型
+   * update T_B_OPERATOR_WAREHOUSE
 	 *   <dynamic prepend="set" >
 	 *     <isNotNull prepend="," property="record.operatorId" >
 	 *       OPERATOR_ID = #record.operatorId#
@@ -257,156 +315,152 @@ public class IntrospectedColumn {
 	 *
 	 *	2018-03-29 modify by chengen
 	 * 
-     * @param prefix
-     * @return
-     */
-    public String getIbatisFormattedParameterClause(String prefix) {
-        StringBuilder sb = new StringBuilder();
-        
-        sb.append('#');
-        sb.append(getJavaProperty(prefix));
-        
-        if (StringUtility.stringHasValue(typeHandler)) {
-            sb.append(",jdbcType="); //$NON-NLS-1$
-            sb.append(getJdbcTypeName());
-            sb.append(",handler="); //$NON-NLS-1$
-            sb.append(typeHandler);
-        } 
-//        else {
-//            sb.append(':');
-//            sb.append(getJdbcTypeName());
-//        }
-        
-        sb.append('#');
-        
-        return sb.toString();
-    }
-
-    public String getTypeHandler() {
-        return typeHandler;
-    }
-
-    public void setTypeHandler(String typeHandler) {
-        this.typeHandler = typeHandler;
-    }
+   * @param prefix
+   * @return
+   */
+  public String getIbatisFormattedParameterClause(String prefix)
+  {
+    StringBuilder sb = new StringBuilder();
     
-
-    public String getActualColumnName() {
-        return actualColumnName;
+    sb.append('#');
+    sb.append(getJavaProperty(prefix));
+    if (StringUtility.stringHasValue(this.typeHandler))
+    {
+      sb.append(",jdbcType=");
+      sb.append(getJdbcTypeName());
+      sb.append(",handler=");
+      sb.append(this.typeHandler);
     }
-
-    public String getEscapedColumnName() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(StringUtility.escapeStringForIbatis(actualColumnName));
-        
-        if (isColumnNameDelimited) {
-            sb.insert(0, ibatorContext.getBeginningDelimiter());
-            sb.append(ibatorContext.getEndingDelimiter());
-        }
-        
-        return sb.toString();
+//    else
+//    {
+//      sb.append(':');
+//      sb.append(getJdbcTypeName());
+//    }
+    sb.append('#');
+    
+    return sb.toString();
+  }
+  
+  public String getTypeHandler()
+  {
+    return this.typeHandler;
+  }
+  
+  public void setTypeHandler(String typeHandler)
+  {
+    this.typeHandler = typeHandler;
+  }
+  
+  public String getActualColumnName()
+  {
+    return this.actualColumnName;
+  }
+  
+  public String getEscapedColumnName()
+  {
+    StringBuilder sb = new StringBuilder();
+    sb.append(StringUtility.escapeStringForIbatis(this.actualColumnName));
+    if (this.isColumnNameDelimited)
+    {
+      sb.insert(0, this.ibatorContext.getBeginningDelimiter());
+      sb.append(this.ibatorContext.getEndingDelimiter());
     }
-
-    /**
-     * The aliased column name for a select statement generated by the example clauses.
-     * This is not appropriate for selects in SqlMaps because the column is
-     * not escaped for iBATIS.  If there
-     * is a table alias, the value will be alias.columnName.
-     * 
-     * This method is used in the Example classes and the returned value will be
-     * in a Java string.  So we need to escape double quotes if they are
-     * the delimiters.
-     * 
-     * @return the aliased column name
-     */
-    public String getAliasedActualColumnName() {
-        StringBuilder sb = new StringBuilder();
-        if (StringUtility.stringHasValue(tableAlias)) {
-            sb.append(tableAlias);
-            sb.append('.');
-        }
-
-        if (isColumnNameDelimited) {
-            sb.append(StringUtility.escapeStringForJava(ibatorContext.getBeginningDelimiter()));
-        }
-        
-        sb.append(actualColumnName);
-            
-        if (isColumnNameDelimited) {
-            sb.append(StringUtility.escapeStringForJava(ibatorContext.getEndingDelimiter()));
-        }
-        
-        return sb.toString();
+    return sb.toString();
+  }
+  
+  public String getAliasedActualColumnName()
+  {
+    StringBuilder sb = new StringBuilder();
+    if (StringUtility.stringHasValue(this.tableAlias))
+    {
+      sb.append(this.tableAlias);
+      sb.append('.');
     }
-
-    /**
-     * Calculates the string to use in select phrases in SqlMaps.
-     * 
-     * @return the aliased escaped column name
-     */
-    public String getAliasedEscapedColumnName() {
-        if (StringUtility.stringHasValue(tableAlias)) {
-            StringBuilder sb = new StringBuilder();
-            
-            sb.append(tableAlias);
-            sb.append('.');
-            sb.append(getEscapedColumnName());
-            return sb.toString();
-        } else {
-            return getEscapedColumnName();
-        }
+    if (this.isColumnNameDelimited) {
+      sb.append(StringUtility.escapeStringForJava(this.ibatorContext.getBeginningDelimiter()));
     }
-
-    public void setColumnNameDelimited(boolean isColumnNameDelimited) {
-        this.isColumnNameDelimited = isColumnNameDelimited;
+    sb.append(this.actualColumnName);
+    if (this.isColumnNameDelimited) {
+      sb.append(StringUtility.escapeStringForJava(this.ibatorContext.getEndingDelimiter()));
     }
-
-    public boolean isColumnNameDelimited() {
-        return isColumnNameDelimited;
+    return sb.toString();
+  }
+  
+  public String getAliasedEscapedColumnName()
+  {
+    if (StringUtility.stringHasValue(this.tableAlias))
+    {
+      StringBuilder sb = new StringBuilder();
+      
+      sb.append(this.tableAlias);
+      sb.append('.');
+      sb.append(getEscapedColumnName());
+      return sb.toString();
     }
-
-    public String getJdbcTypeName() {
-        if (jdbcTypeName == null) {
-            jdbcTypeName = JdbcTypeNameTranslator.getJdbcTypeName(jdbcType);
-        }
-        
-        return jdbcTypeName;
+    return getEscapedColumnName();
+  }
+  
+  public void setColumnNameDelimited(boolean isColumnNameDelimited)
+  {
+    this.isColumnNameDelimited = isColumnNameDelimited;
+  }
+  
+  public boolean isColumnNameDelimited()
+  {
+    return this.isColumnNameDelimited;
+  }
+  
+  public String getJdbcTypeName()
+  {
+    if (this.jdbcTypeName == null) {
+      this.jdbcTypeName = JdbcTypeNameTranslator.getJdbcTypeName(this.jdbcType);
     }
-
-    public void setJdbcTypeName(String jdbcTypeName) {
-        this.jdbcTypeName = jdbcTypeName;
-    }
-
-    public FullyQualifiedJavaType getFullyQualifiedJavaType() {
-        return fullyQualifiedJavaType;
-    }
-
-    public void setFullyQualifiedJavaType(
-            FullyQualifiedJavaType fullyQualifiedJavaType) {
-        this.fullyQualifiedJavaType = fullyQualifiedJavaType;
-    }
-
-    public String getTableAlias() {
-        return tableAlias;
-    }
-
-    public void setTableAlias(String tableAlias) {
-        this.tableAlias = tableAlias;
-    }
-
-    public IbatorContext getIbatorContext() {
-        return ibatorContext;
-    }
-
-    public void setIbatorContext(IbatorContext ibatorContext) {
-        this.ibatorContext = ibatorContext;
-    }
-
-    public IntrospectedTable getIntrospectedTable() {
-        return introspectedTable;
-    }
-
-    public void setIntrospectedTable(IntrospectedTable introspectedTable) {
-        this.introspectedTable = introspectedTable;
-    }
+    return this.jdbcTypeName;
+  }
+  
+  public void setJdbcTypeName(String jdbcTypeName)
+  {
+    this.jdbcTypeName = jdbcTypeName;
+  }
+  
+  public FullyQualifiedJavaType getFullyQualifiedJavaType()
+  {
+    return this.fullyQualifiedJavaType;
+  }
+  
+  public void setFullyQualifiedJavaType(FullyQualifiedJavaType fullyQualifiedJavaType)
+  {
+    this.fullyQualifiedJavaType = fullyQualifiedJavaType;
+  }
+  
+  public String getTableAlias()
+  {
+    return this.tableAlias;
+  }
+  
+  public void setTableAlias(String tableAlias)
+  {
+    this.tableAlias = tableAlias;
+  }
+  
+  public IbatorContext getIbatorContext()
+  {
+    return this.ibatorContext;
+  }
+  
+  public void setIbatorContext(IbatorContext ibatorContext)
+  {
+    this.ibatorContext = ibatorContext;
+  }
+  
+  public IntrospectedTable getIntrospectedTable()
+  {
+    return this.introspectedTable;
+  }
+  
+  public void setIntrospectedTable(IntrospectedTable introspectedTable)
+  {
+    this.introspectedTable = introspectedTable;
+  }
 }
+
