@@ -6,10 +6,5 @@
 	<version>0.0.1-SNAPSHOT</version>
 
 	<dependencies>
-		<dependency>
-			<groupId>org.apache.ibatis</groupId>
-			<artifactId>ibator</artifactId>
-			<version>1.2.1.681</version>
-		</dependency>
 	</dependencies>
 </project>
